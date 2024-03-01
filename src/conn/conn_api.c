@@ -663,6 +663,86 @@ __wt_conn_remove_extractor(WT_SESSION_IMPL *session)
     return (ret);
 }
 
+static int
+__conn_add_ext_type(WT_CONNECTION *wt_conn, const char *name, WT_EXT_TYPE *type)
+{
+    WT_CONNECTION_IMPL *conn;
+    WT_DECL_RET;
+    WT_NAMED_EXT_TYPE *nexttype;
+    WT_SESSION_IMPL *session;
+
+    nexttype = NULL;
+
+    conn = (WT_CONNECTION_IMPL *)wt_conn;
+    CONNECTION_API_CALL_NOCONF(conn, session, add_ext_type);
+
+    if (strcmp(name, "none") == 0)
+        WT_ERR_MSG(session, EINVAL, "invalid name for an ext type: %s", name);
+
+    printf("adding ext type: %s\n", name);
+    WT_ERR(__wt_calloc_one(session, &nexttype));
+    WT_ERR(__wt_strdup(session, name, &nexttype->name));
+    nexttype->type_handler = type;
+
+    __wt_spin_lock(session, &conn->api_lock);
+    TAILQ_INSERT_TAIL(&conn->exttypeqh, nexttype, q);
+    nexttype = NULL;
+    __wt_spin_unlock(session, &conn->api_lock);
+
+err:
+    if (nexttype != NULL) {
+        __wt_free(session, nexttype->name);
+        __wt_free(session, nexttype);
+    }
+
+    API_END_RET_NOTFOUND_MAP(session, ret);
+}
+
+int
+__wt_conn_remove_ext_type(WT_SESSION_IMPL *session)
+{
+    WT_CONNECTION_IMPL *conn;
+    WT_DECL_RET;
+    WT_NAMED_EXT_TYPE *next;
+
+    conn = S2C(session);
+
+    while ((next = TAILQ_FIRST(&conn->exttypeqh)) != NULL) {
+        /* Remove from the connection's list, free memory. */
+        TAILQ_REMOVE(&conn->exttypeqh, next, q);
+        /* Call any termination method. */
+        if (next->type_handler->terminate != NULL)
+            WT_TRET(next->type_handler->terminate(next->type_handler, (WT_SESSION *)session));
+
+        __wt_free(session, next->name);
+        __wt_free(session, next);
+    }
+
+    return (ret);
+}
+
+int
+__wt_conn_get_ext_type(WT_SESSION_IMPL *session, const char *type, WT_EXT_TYPE **handle)
+{
+    size_t typename_len;
+    WT_CONNECTION_IMPL *conn;
+    WT_NAMED_EXT_TYPE *exttype;
+
+    *handle = NULL;
+    typename_len = strlen(type);
+
+    if (strlen(type) == 0 || WT_STRING_MATCH("none", type, typename_len)) return (0);
+
+    conn = S2C(session);
+    TAILQ_FOREACH (exttype, &conn->exttypeqh, q)
+        if (WT_STRING_MATCH(exttype->name, type, typename_len)) {
+            *handle = exttype->type_handler;
+            return (0);
+        }
+    WT_RET_MSG(session, EINVAL, "unknown type handler '%.*s'", (int)typename_len, type);
+    
+}
+
 /*
  * __conn_add_storage_source --
  *     WT_CONNECTION->add_storage_source method.
@@ -897,6 +977,9 @@ extern int zstd_extension_init(WT_CONNECTION *, WT_CONFIG_ARG *);
 #ifdef HAVE_BUILTIN_EXTENSION_IAA
 extern int iaa_extension_init(WT_CONNECTION *, WT_CONFIG_ARG *);
 #endif
+#ifdef HAVE_BUILTIN_EXTENSION_BSON
+extern int bson_extension_init(WT_CONNECTION *, WT_CONFIG_ARG *);
+#endif
 
 /*
  * __conn_builtin_extensions --
@@ -919,6 +1002,9 @@ __conn_builtin_extensions(WT_CONNECTION_IMPL *conn, const char *cfg[])
 #endif
 #ifdef HAVE_BUILTIN_EXTENSION_IAA
     WT_RET(__conn_builtin_init(conn, "iaa", iaa_extension_init, cfg));
+#endif
+#ifdef HAVE_BUILTIN_EXTENSION_BSON
+    WT_RET(__conn_builtin_init(conn, "bson", bson_extension_init, cfg));
 #endif
 
     /* Avoid warnings if no builtin extensions are configured. */
@@ -2783,7 +2869,7 @@ wiredtiger_open(const char *home, WT_EVENT_HANDLER *event_handler, const char *c
       __conn_get_home, __conn_compile_configuration, __conn_configure_method, __conn_is_new,
       __conn_open_session, __conn_query_timestamp, __conn_set_timestamp, __conn_rollback_to_stable,
       __conn_load_extension, __conn_add_data_source, __conn_add_collator, __conn_add_compressor,
-      __conn_add_encryptor, __conn_add_extractor, __conn_set_file_system, __conn_add_storage_source,
+      __conn_add_encryptor, __conn_add_extractor, __conn_add_ext_type, __conn_set_file_system, __conn_add_storage_source,
       __conn_get_storage_source, __conn_get_extension_api};
     static const WT_NAME_FLAG file_types[] = {{"checkpoint", WT_DIRECT_IO_CHECKPOINT},
       {"data", WT_DIRECT_IO_DATA}, {"log", WT_DIRECT_IO_LOG}, {NULL, 0}};

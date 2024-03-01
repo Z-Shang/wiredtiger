@@ -213,6 +213,28 @@ err:
 }
 
 /*
+ * __wt_curtable_get_value_ext_type --
+ *     WT_CURSOR->get_value_ext_type implementation for tables.
+ */
+int
+__wt_curtable_get_value_ext_type(WT_CURSOR *cursor, const char * type, const char * proj, ...)
+{
+    WT_DECL_RET;
+    WT_SESSION_IMPL *session;
+    va_list ap;
+
+    JOINABLE_CURSOR_API_CALL(cursor, session, ret, get_value_ext_type, NULL);
+
+    va_start(ap, proj);
+    ret = __wt_curtable_get_valuev_ext_type(cursor, type, proj, ap);
+    va_end(ap);
+
+err:
+    API_END_RET_STAT(session, ret, cursor_get_value_ext_type);
+}
+
+
+/*
  * __wt_curtable_set_key --
  *     WT_CURSOR->set_key implementation for tables.
  */
@@ -1047,8 +1069,9 @@ int
 __wt_curtable_open(WT_SESSION_IMPL *session, const char *uri, WT_CURSOR *owner, const char *cfg[],
   WT_CURSOR **cursorp)
 {
-    WT_CURSOR_STATIC_INIT(iface, __wt_curtable_get_key, /* get-key */
+    WT_CURSOR_STATIC_INIT_EXT_TYPE(iface, __wt_curtable_get_key, /* get-key */
       __wt_curtable_get_value,                          /* get-value */
+      __wt_curtable_get_value_ext_type,                 /* get-value-ext-type */
       __wt_cursor_get_raw_key_value_notsup,             /* get-raw-key-value */
       __wt_curtable_set_key,                            /* set-key */
       __wt_curtable_set_value,                          /* set-value */
@@ -1097,6 +1120,7 @@ __wt_curtable_open(WT_SESSION_IMPL *session, const char *uri, WT_CURSOR *owner, 
 
     if (table->is_simple) {
         /* Just return a cursor on the underlying data source. */
+        printf("opening simple cursor: %s\n", table->cgroups[0]->source);
         ret = __wt_open_cursor(session, table->cgroups[0]->source, NULL, cfg, cursorp);
 
         WT_TRET(__wt_schema_release_table(session, &table));

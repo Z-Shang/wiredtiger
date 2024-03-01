@@ -579,6 +579,43 @@ err:
     API_END_RET_STAT(session, ret, cursor_get_value);
 }
 
+int
+__wt_cursor_get_value_ext_type(WT_CURSOR *cursor, const char *type, const char *proj, ...)
+{
+    WT_DECL_RET;
+    va_list ap;
+
+    va_start(ap, proj);
+    ret = __wt_cursor_get_valuev_ext_type(cursor, type, proj, ap);
+    va_end(ap);
+    return (ret);
+}
+
+int
+__wt_cursor_get_valuev_ext_type(WT_CURSOR *cursor, const char *type, const char *proj, va_list ap)
+{
+    WT_DECL_RET;
+    WT_ITEM *value;
+    WT_SESSION_IMPL *session;
+    WT_EXT_TYPE *type_handler;
+
+    CURSOR_API_CALL(cursor, session, ret, get_value_ext_type, NULL);
+
+    if (!F_ISSET(cursor, WT_CURSTD_VALUE_EXT | WT_CURSTD_VALUE_INT))
+        WT_ERR(__wt_cursor_kv_not_set(cursor, false));
+
+    /* Force an allocated copy when using cursor copy debug. */
+    if (FLD_ISSET(S2C(session)->debug_flags, WT_CONN_DEBUG_CURSOR_COPY))
+        WT_ERR(__wt_buf_grow(session, &cursor->value, cursor->value.size));
+
+    WT_RET(__wt_conn_get_ext_type(session, type, &type_handler));
+    value = va_arg(ap, WT_ITEM *);
+    WT_RET(type_handler->project(type_handler, &session->iface, proj, &cursor->value, value));
+
+err:
+    API_END_RET_STAT(session, ret, cursor_get_value_ext_type);
+}
+
 /*
  * __wt_cursor_get_raw_key_value --
  *     WT_CURSOR->get_raw_key_value default implementation

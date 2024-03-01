@@ -734,6 +734,7 @@ struct __wt_connection_stats {
     int64_t cursor_equals_error;
     int64_t cursor_get_key_error;
     int64_t cursor_get_value_error;
+    int64_t cursor_get_value_ext_type_error;
     int64_t cursor_insert;
     int64_t cursor_insert_error;
     int64_t cursor_insert_check_error;
@@ -1245,6 +1246,7 @@ struct __wt_dsrc_stats {
     int64_t cursor_equals_error;
     int64_t cursor_get_key_error;
     int64_t cursor_get_value_error;
+    int64_t cursor_get_value_ext_type_error;
     int64_t cursor_insert_error;
     int64_t cursor_insert_check_error;
     int64_t cursor_largest_key_error;

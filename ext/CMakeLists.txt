@@ -18,6 +18,9 @@ add_subdirectory(encryptors/nop)
 # Build the extractor extensions.
 add_subdirectory(extractors/csv)
 
+# Build the type handler extensions.
+add_subdirectory(type_handlers/bson)
+
 # We currently don't support these tests extensions on non-POSIX systems since they are designed around the
 # existence of POSIX utilities or certain system headers e.g Linux signals.
 if(WT_POSIX)

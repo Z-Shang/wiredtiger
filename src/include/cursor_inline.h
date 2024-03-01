@@ -351,6 +351,32 @@ __wt_curtable_get_valuev(WT_CURSOR *cursor, va_list ap)
 }
 
 /*
+ * __wt_curtable_get_valuev_ext_type --
+ *     Internal implementation of WT_CURSOR->get_value_ext_type for table cursors.
+ */
+static WT_INLINE int
+__wt_curtable_get_valuev_ext_type(WT_CURSOR *cursor, const char *type, const char *proj, va_list ap)
+{
+    WT_CURSOR *primary;
+    WT_CURSOR_TABLE *ctable;
+    WT_SESSION_IMPL *session;
+    WT_EXT_TYPE *type_handler;
+    WT_ITEM *item;
+    // int ret;
+
+    ctable = (WT_CURSOR_TABLE *)cursor;
+    session = CUR2S(cursor);
+
+    WT_RET(__wt_conn_get_ext_type(session, type, &type_handler));
+    primary = *ctable->cg_cursors;
+    WT_RET(__cursor_checkvalue(primary));
+
+    item = va_arg(ap, WT_ITEM *);
+    WT_RET(type_handler->project(type_handler, &session->iface, proj, &cursor->value, item));
+    return (0);
+}
+
+/*
  * __wt_cursor_dhandle_incr_use --
  *     Increment the in-use counter in the cursor's data source.
  */

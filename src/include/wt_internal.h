@@ -315,6 +315,8 @@ struct __wt_named_encryptor;
 typedef struct __wt_named_encryptor WT_NAMED_ENCRYPTOR;
 struct __wt_named_extractor;
 typedef struct __wt_named_extractor WT_NAMED_EXTRACTOR;
+struct __wt_named_ext_type;
+typedef struct __wt_named_ext_type WT_NAMED_EXT_TYPE;
 struct __wt_named_storage_source;
 typedef struct __wt_named_storage_source WT_NAMED_STORAGE_SOURCE;
 struct __wt_optrack_header;
@@ -580,6 +582,8 @@ typedef uint64_t wt_timestamp_t;
 #include "serial_inline.h"
 #include "str_inline.h"
 #include "time_inline.h"
+
+#include "type.h" /* pluggable type */
 
 #if defined(__cplusplus)
 }

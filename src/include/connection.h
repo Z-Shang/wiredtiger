@@ -214,6 +214,16 @@ struct __wt_named_extractor {
 };
 
 /*
+ * WT_NAMED_EXT_TYPE--
+ *	An ext_type list entry
+ */
+struct __wt_named_ext_type{
+    const char *name;                    /* Name of type handler */
+    WT_EXT_TYPE *type_handler;             /* User supplied object */
+    TAILQ_ENTRY(__wt_named_ext_type) q; /* Linked list of type handlers*/
+};
+
+/*
  * WT_NAMED_STORAGE_SOURCE --
  *	A storage source list entry
  */
@@ -680,6 +690,8 @@ struct __wt_connection_impl {
 
     /* Locked: extractor list */
     TAILQ_HEAD(__wt_extractor_qh, __wt_named_extractor) extractorqh;
+
+    TAILQ_HEAD(__wt_exttype_qh, __wt_named_ext_type) exttypeqh;
 
     /* Locked: storage source list */
     WT_SPINLOCK storage_lock; /* Storage source list lock */

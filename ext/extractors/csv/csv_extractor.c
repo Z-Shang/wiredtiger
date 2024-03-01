@@ -33,6 +33,8 @@
 
 #include <wiredtiger_ext.h>
 
+#include <stdio.h>
+
 /*
  * A simple WiredTiger extractor that separates a single string field,
  * interpreted as column separated values (CSV), into component pieces.
@@ -221,6 +223,7 @@ wiredtiger_extension_init(WT_CONNECTION *connection, WT_CONFIG_ARG *config)
 
     (void)config; /* Unused parameters */
 
+    printf("INIT CSV EXTRACTOR\n");
     if ((csv_extractor = calloc(1, sizeof(CSV_EXTRACTOR))) == NULL)
         return (errno);
 

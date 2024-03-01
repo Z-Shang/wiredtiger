@@ -172,6 +172,10 @@ if(HAVE_BUILTIN_EXTENSION_IAA)
     list(APPEND builtin_objs $<TARGET_OBJECTS:wiredtiger_iaa>)
 endif()
 
+if(HAVE_BUILTIN_EXTENSION_BSON)
+    list(APPEND builtin_objs $<TARGET_OBJECTS:wiredtiger_bson_handler>)
+endif()
+
 # Generate wiredtiger.h include file.
 configure_file(src/include/wiredtiger.in "include/wiredtiger.h" @ONLY)
 # Generate our wiredtiger_config.h include file.

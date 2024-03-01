@@ -27,6 +27,8 @@
 /* IAA support automatically loaded. */
 #cmakedefine HAVE_BUILTIN_EXTENSION_IAA 1
 
+#cmakedefine HAVE_BUILTIN_EXTENSION_BSON 1
+
 /* libsodium support automatically loaded. */
 #cmakedefine HAVE_BUILTIN_EXTENSION_SODIUM 1
 

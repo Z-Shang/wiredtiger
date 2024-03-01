@@ -73,6 +73,7 @@ struct __wt_encryptor;      typedef struct __wt_encryptor WT_ENCRYPTOR;
 struct __wt_event_handler;  typedef struct __wt_event_handler WT_EVENT_HANDLER;
 struct __wt_extension_api;  typedef struct __wt_extension_api WT_EXTENSION_API;
 struct __wt_extractor;      typedef struct __wt_extractor WT_EXTRACTOR;
+struct __wt_ext_type;       typedef struct __wt_ext_type WT_EXT_TYPE;
 struct __wt_file_handle;    typedef struct __wt_file_handle WT_FILE_HANDLE;
 struct __wt_file_system;    typedef struct __wt_file_system WT_FILE_SYSTEM;
 struct __wt_item;       typedef struct __wt_item WT_ITEM;
@@ -258,6 +259,25 @@ struct __wt_cursor {
      * @errors
      */
     int __F(get_value)(WT_CURSOR *cursor, ...);
+
+    /*!
+     * Get the value for the current record.
+     *
+     * @snippet ex_all.c Get the cursor's string value
+     *
+     * @snippet ex_all.c Get the cursor's raw value
+     *
+     * @param cursor the cursor handle
+     * @param fmt the type handle
+     * @param proj optional type based projection
+     * @param ... pointers to hold value fields corresponding to
+     * WT_CURSOR::value_format.
+     * The API does not validate the argument types passed in; the caller is
+     * responsible for passing the correct argument types according to
+     * WT_CURSOR::value_format.
+     * @errors
+     */
+    int __F(get_value_ext_type)(WT_CURSOR *cursor, const char *type, const char *proj, ...);
 
     /*!
      * Get the raw key and value for the current record.
@@ -2842,6 +2862,9 @@ struct __wt_connection {
     int __F(add_extractor)(WT_CONNECTION *connection, const char *name,
         WT_EXTRACTOR *extractor, const char *config);
 
+    int __F(add_ext_type)(WT_CONNECTION *connection, const char *name,
+        WT_EXT_TYPE *type);
+
     /*!
      * Configure a custom file system.
      *
@@ -4696,6 +4719,25 @@ struct __wt_extractor {
      * the handle will not be subsequently accessed by WiredTiger.
      */
     int (*terminate)(WT_EXTRACTOR *extractor, WT_SESSION *session);
+};
+
+/*!
+ * The interface implemented by applications to provide custom handling of
+ * types encoded.
+ *
+ * Applications register implementations with WiredTiger by calling
+ * WT_CONNECTION::add_ext_type.
+ */
+struct __wt_ext_type {
+    int (*project)(WT_EXT_TYPE *type_handle, WT_SESSION *session,
+        const char *proj, const WT_ITEM *value,
+        WT_ITEM *result);
+
+    /*!
+     * The WT_EXT_TYPE::terminate callback is intended to allow cleanup;
+     * the handle will not be subsequently accessed by WiredTiger.
+     */
+    int (*terminate)(WT_EXT_TYPE *type_handle, WT_SESSION *session);
 };
 
 /*! WT_FILE_SYSTEM::open_file file types */

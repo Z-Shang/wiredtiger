@@ -618,6 +618,7 @@ COMPARE_NOTFOUND_OK(__wt_cursor::_search_near)
 /* First, replace the varargs get / set methods with Python equivalents. */
 %ignore __wt_cursor::get_key;
 %ignore __wt_cursor::get_value;
+%ignore __wt_cursor::get_value_ext_type;
 %ignore __wt_cursor::set_key;
 %ignore __wt_cursor::set_value;
 %ignore __wt_cursor::modify(WT_CURSOR *, WT_MODIFY *, int);
@@ -814,6 +815,16 @@ typedef int int_void;
 		return (ret);
 	}
 
+  int_void _get_value_ext_type(char *type, char *proj, char **datap, int *sizep) {
+    WT_ITEM v;
+    int ret = $self->get_value_ext_type($self, type, proj, &v);
+		if (ret == 0) {
+			*datap = (char *)v.data;
+			*sizep = (int)v.size;
+		}
+		return (ret);
+  }
+
 	int_void _get_json_value(char **charp, int *sizep) {
 		const char *k;
 		int ret = $self->get_value($self, &k);
@@ -949,6 +960,11 @@ typedef int int_void;
 			return metadata + data
 		else:
 			return unpack(self.value_format, self._get_value())
+
+	def get_value_ext_type(self, type, proj):
+		'''get_value_ext_type(self, type, proj) -> (object, ...)'''
+		result = self._get_value_ext_type(type, proj)
+		return unpack("u", result)
 
 	def get_raw_key_value(self):
 		'''get_raw_key_value(self) -> object
@@ -1243,6 +1259,7 @@ int standalone_build();
 %ignore __wt_extractor;
 %ignore __wt_item;
 %ignore __wt_lsn;
+%ignore __wt_ext_type;
 
 %ignore __wt_connection::add_collator;
 %ignore __wt_connection::add_compressor;
